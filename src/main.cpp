@@ -201,13 +201,6 @@ void loop() {
     getLamad();
     prevPlaying = now;
   }
-/*
-04:54
-12:06
-15:25
-17:58
-19:10
-*/
 
 	if (digitalRead(CONFIGRESETBUTTON)==LOW && false) { // & false to skip resetWiFi
 		if (reset_trigger == false) {
