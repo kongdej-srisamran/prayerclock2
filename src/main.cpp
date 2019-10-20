@@ -182,7 +182,7 @@ void loop() {
     setSyncProvider(getNTPtime);
   }
  
-	if ( (timeslice > 4 && timeslice < 8) ||  (timeslice > 24 && timeslice < 28) ) {
+	if ( (timeslice > 4 && timeslice < 9) ||  (timeslice > 24 && timeslice < 28) ) {
     showNextPray();
 	}
 	else {
