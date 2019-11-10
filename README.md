@@ -6,11 +6,11 @@ Hardware Requirements :
 2. YX5300 Serial MP3 Player
 
 Arduino Library : pio lib install <LIB>
-    - Time
-	- ArduinoJson
-	- WiFiManager
-	- MD_MAX72XX
-	- MD_YX5300
+1. Time
+2. ArduinoJson
+3. WiFiManager
+4. MD_MAX72XX
+5. MD_YX5300
 
 Schematic :
 <img src="lamad.png">
