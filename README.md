@@ -2,8 +2,8 @@
 
 Time Server :
 
-MuslimThaipost  = "http://www.muslimthaipost.com/prayertimes/solaat.php?" <br/>
-NTP Server = "th.pool.ntp.org"
+MuslimThaipost  = "http://www.muslimthaipost.com/prayertimes/index.php" <br/>
+NTP Server = "th.pool.ntp.org" <br>
 
 Hardware Requirements :
 1. NodeMCU
