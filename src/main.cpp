@@ -1,39 +1,46 @@
-/* Prayer Clock */
-/* Version 2 */
-
+/* Prayer Clock Version 2 by s.kongdej nov 2019 */
 #include <Arduino.h>
-#include <ArduinoOTA.h>
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 #include <Time.h>
 #include "wifi.h"
 #include "ntp.h"
-#include "lamad.h"
 #include "StringSplitter.h"
 #include <MD_MAX72xx.h>
 #include <SPI.h>
- 
+#include <SoftwareSerial.h>
+#include <MD_YX5300.h>
+#include <ArduinoJson.h>
+#include "StringSplitter.h"
+#include <ESP8266HTTPClient.h>
+
+char ntpserver[NTP_LEN];
+char apitoken[APITOKEN_LEN];
+String host = "http://www.muslimthaipost.com/prayertimes/solaat.php?";
+
+// Connections for serial interface to the YX5300 module
+const uint8_t RX = 5;    // D1 connect to TX of MP3 Player module
+const uint8_t TX = 4;    // D2 connect to RX of MP3 Player module
+const uint8_t PLAY_FOLDER = 1;
+MD_YX5300 mp3(RX, TX);   // Define global variables
+
 #define HARDWARE_TYPE MD_MAX72XX::FC16_HW
-#define MAX_DEVICES 4
-#define CLK_PIN   14    // or SCK
-#define DATA_PIN  13    // or MOSI
-#define CS_PIN    2     // or SS
-#define CHAR_SPACING  1 // pixels between characters
+#define MAX_DEVICES   4
+#define CLK_PIN       14    // D5 or SCK
+#define DATA_PIN      0     // D3 or MOSI
+#define CS_PIN        2     // D4 or SS
+#define CHAR_SPACING  1     // pixels between characters
 #define BUF_SIZE  75
 MD_MAX72XX mx = MD_MAX72XX(HARDWARE_TYPE, DATA_PIN, CLK_PIN, CS_PIN,  MAX_DEVICES);
 
 // ntp stuff
 NTP NTPclient;
-#define CET 6 // central european time
-#define NTP_SERVER "th.pool.ntp.org" 
-//#define NTP_SERVER "ntp.egat.clo.th" 
-
-
-#define CONFIGRESETBUTTON 4
+#define CET 7 // central european time
+#define CONFIGRESETBUTTON    16 // D0
 bool reset_trigger = false;
 
 // Praytime
-String p_time[5] = {"21:21","21:22","22:00","23:00","23:30"};
+String p_time[5] = {"13:22","13:30","13:40","13:50","13:55"};
 int prevPlaying = 0;
 
 time_t getNTPtime(void) {
@@ -105,7 +112,7 @@ String getNow() {
 
 void display_clock() {
   char message[BUF_SIZE];
-	String msg = "  "+ getNow();
+	String msg = " "+ getNow();
 	msg.toCharArray(message, 50) ;
   printText(0, MAX_DEVICES-1, message);
 }
@@ -139,6 +146,54 @@ void showNextPray() {
   }
 }
 
+String getLamadData(){
+	String praytime;
+	String url = String(host)+String(apitoken);
+	String line;
+	//Serial.println(apitoken);
+	Serial.println(String("GET " + url)); // debug info
+
+	if (WiFi.status() == WL_CONNECTED) // Check WiFi connection status
+	{
+		HTTPClient http;  // Declare an object of class HTTPClient
+		http.begin(url);  // Specify request destination
+		int httpCode = http.GET(); //Send the request
+		if (httpCode > 0) // Check the returning code
+		{
+			line = http.getString();   // Get the request response payload
+		}
+		else
+		{
+			Serial.println("HTTP response code is no good");
+			http.end();
+			return "0";
+		}
+		http.end();   //Close connection
+		//Serial.print("Response :"); Serial.println(line); // debug info
+
+		//drawStringClr(0,font,"link up");
+		//String test = "<html>x.<table>x.<tr><td>01:00 x.</td></tr><tr><td>02:00 x.</td></tr><tr><td>03:00 x.</td></tr><tr><td>04:00 x.</td></tr><tr><td>05:00 x.</td></tr></table>";
+		StringSplitter *splitter = new StringSplitter(line, '.', 8);
+		//int itemCount = splitter->getItemCount();
+		
+		//Serial.println();
+
+		for(int i = 2; i < 7; i++){
+			String item = splitter->getItemAtIndex(i);
+			String t =  item.substring(item.length()-9,item.length()-4);
+			praytime += t + ',';
+			//Serial.println(t);
+		}
+
+		return praytime;
+	}
+	else
+	{
+		Serial.println("Wifi connection failed");
+		return "0";
+	}
+}
+
 void getLamad() {
   String praytime = getLamadData();  
   StringSplitter *splitter = new StringSplitter(praytime, ',', 6);
@@ -150,37 +205,32 @@ void getLamad() {
   }
 }
 
-// setup ----
+//=== Setup&Loop ----------------------------------------
 void setup() {
 	Serial.begin(9600);
-
-  mx.begin();
-	Serial.println(); Serial.println("boot"); Serial.println();
-
-	// set flash button to config resetter
 	pinMode(CONFIGRESETBUTTON, INPUT_PULLUP);
+	Serial.println("boot");
+  mx.begin(); // init led matrix
+	
+  setupWiFi(); // setup wifif
+  Serial.println("Wifi connected.");
 
-	// Set WiFi parameters explicitly: autoconnect, station mode 
-	setupWiFi();
-
-	ArduinoOTA.setHostname("matrixclock");
-  ArduinoOTA.setPassword("matrixclockfirmware");
-	ArduinoOTA.begin(); 
-
-  NTPclient.begin(NTP_SERVER, CET);
+  NTPclient.begin(ntpserver, CET);
   setSyncInterval(SECS_PER_HOUR);
   setSyncProvider(getNTPtime);
 
-  getLamad();
-}
-
-void loop() {
-  uint8_t	timeslice=now() % 60;
+  getLamad();  // get lamad time 
   
+  mp3.begin();
+  mp3.setSynchronous(true);
+  mp3.volume(mp3.volumeMax());
+}
+void loop() {
+  mp3.check(); 
+  uint8_t	timeslice=now() % 60;  
   int now = getMinute(getNow()); 
-
   if (now == 0 ) {
-    NTPclient.begin(NTP_SERVER, CET);
+    NTPclient.begin(ntpserver, CET);
     setSyncInterval(SECS_PER_HOUR);
     setSyncProvider(getNTPtime);
   }
@@ -191,13 +241,16 @@ void loop() {
 	else {
 		display_clock();
 	}
+
   if ( now == getMinute(p_time[0]) && prevPlaying < now) {
     Serial.println("Play 1");
     prevPlaying = now;
+    mp3.playTrack(1);
   }
   else if ((now  == getMinute(p_time[1]) || now  == getMinute(p_time[2]) || now  == getMinute(p_time[3]) || now  == getMinute(p_time[4])) && prevPlaying < now) {
     Serial.println("Play 2");
     prevPlaying = now;
+    mp3.playTrack(2);
   }
   else if (now == getMinute("01:00") && prevPlaying < now) {
     Serial.println("get prayer time");
@@ -205,14 +258,11 @@ void loop() {
     prevPlaying = now;
   }
 
-	if (digitalRead(CONFIGRESETBUTTON)==LOW && false) { // & false to skip resetWiFi
+	if (digitalRead(CONFIGRESETBUTTON)==LOW) { // & false to skip resetWiFi
 		if (reset_trigger == false) {
 			reset_trigger = true;
 			Serial.println("Config reset button pressed, taking action");
-			// reset wifi and ESP
 			resetWiFi(); 
 		}
 	}
-
-	ArduinoOTA.handle();
 }

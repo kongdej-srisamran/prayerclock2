@@ -12,11 +12,7 @@
 #include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
 #include "wifi.h"
 
-#define CONFIGAP_SSID
-
-//define your default values here, if there are different values in config.json, they are overwritten.
-char cityid[CITYID_LEN] = "1609350";
-char apitoken[APITOKEN_LEN] = "3169fb29e733d432ac818a7f469e4087";
+#define CONFIGAP_SSID "PrayerClockAP"
 
 //flag for saving data
 bool shouldSaveConfig = false;
@@ -50,6 +46,9 @@ void setupWiFi() {
 
   if (SPIFFS.begin()) {
     Serial.println("mounted file system");
+    //SPIFFS.remove("/config.json");
+    //SPIFFS.remove("/config1.json");
+    //SPIFFS.remove("/config2.json");
     if (SPIFFS.exists("/config.json")) {
       // file exists, reading and loading
       Serial.println("reading config file");
@@ -62,21 +61,15 @@ void setupWiFi() {
 
         configFile.readBytes(buf.get(), size);
         
-        //DynamicJsonBuffer jsonBuffer;
-        StaticJsonDocument<200> doc;
-        //JsonObject& json = jsonBuffer.parseObject(buf.get());
+        StaticJsonDocument<1204> doc;
         DeserializationError err =  deserializeJson(doc,buf.get());
-        //json.printTo(Serial);
         if (!err) {
           Serial.println("\nparsed json");
           
-
-
-          strcpy(cityid, doc["cityid"]);
+          strcpy(ntpserver, doc["ntpserver"]);
           strcpy(apitoken, doc["apitoken"]);
-          Serial.println(cityid);
+          Serial.println(ntpserver);
           Serial.println(apitoken);
-
 
         } else {
           Serial.println("failed to load json config");
@@ -95,8 +88,8 @@ void setupWiFi() {
   // The extra parameters to be configured (can be either global or just in the setup)
   // After connecting, parameter.getValue() will get you the configured value
   // id/name placeholder/prompt default length
-	WiFiManagerParameter custom_cityid("cityid", "City ID", cityid, CITYID_LEN);
-	WiFiManagerParameter custom_apitoken("apitoken", "Openweathermap API token", apitoken, APITOKEN_LEN);
+	WiFiManagerParameter custom_ntpserver("ntpserver", "NTP Server ", ntpserver, NTP_LEN);
+	WiFiManagerParameter custom_apitoken("apitoken", "Lamad API token", apitoken, APITOKEN_LEN);
 
   // WiFiManager
   // Local intialization. Once its business is done, there is no need to keep it around
@@ -109,12 +102,12 @@ void setupWiFi() {
   // wifiManager.setSTAStaticIPConfig(IPAddress(10,0,1,99), IPAddress(10,0,1,1), IPAddress(255,255,255,0));
   
   //add all your parameters here
-  wifiManager.addParameter(&custom_cityid);
+  wifiManager.addParameter(&custom_ntpserver);
   wifiManager.addParameter(&custom_apitoken);
 
 	WiFi.mode(WIFI_AP_STA);
 
-  if (!wifiManager.autoConnect("MatrixAP")) {
+  if (!wifiManager.autoConnect(CONFIGAP_SSID)) {
     Serial.println("failed to connect and hit timeout");
     delay(3000);
     //reset and try again, or maybe put it to deep sleep
@@ -126,16 +119,16 @@ void setupWiFi() {
   Serial.println("connected...yeey :)");
 
   // read updated parameters
-  strcpy(cityid, custom_cityid.getValue());
+  strcpy(ntpserver, custom_ntpserver.getValue());
   strcpy(apitoken, custom_apitoken.getValue());
 
   // save the custom parameters to FS
   if (shouldSaveConfig) {
     Serial.println("saving config");
     //DynamicJsonBuffer jsonBuffer;
-    StaticJsonDocument<200> doc;
+    StaticJsonDocument<1204> doc;
     //JsonObject& json = jsonBuffer.createObject();
-    doc["cityid"] = cityid;
+    doc["ntpserver"] = ntpserver;
     doc["apitoken"] = apitoken;
 
     File configFile = SPIFFS.open("/config.json", "w");
@@ -154,6 +147,6 @@ void setupWiFi() {
   Serial.println(WiFi.localIP());
   Serial.println("API token");
   Serial.println(apitoken);
-  Serial.println("City ID");
-  Serial.println(cityid);
+  Serial.println("NTP Server");
+  Serial.println(ntpserver);
 }

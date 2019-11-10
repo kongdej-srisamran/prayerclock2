@@ -1,1 +1,5 @@
 #define METEOKEY		"936b1aed9a541e3446cafb8be2c70e62"
+http://www.muslimthaipost.com/prayertimes/index.php?STS&#c_display
+jccHwyO2RBVVRPO21BVVRPO3lBVVRPOzEzMDsxNjY7IzAwMDBGRjsjMDAwMEZGOyNGRkZGRkY7I0ZGRkZGRjsjRkZGRkZGOyNGRkZGRkY7I0ZGRkZGRjsjMDAwMDAwOyMwMDAwMDA7IzAwMDAwMDs7Ozs7Ozs7Ozs7Ozs7Ozs7MjswOzA7cGR8UFM7MTs7MTsxLjI7YzYz
+//#define NTP_SERVER "th.pool.ntp.org" 
+//#define NTP_SERVER "ntp.egat.co.th" 
