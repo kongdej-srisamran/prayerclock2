@@ -1,6 +1,7 @@
 # Muslim Prayer Clock
 
-Time Server :<br/>
+Time Server :
+
 MuslimThaipost  = "http://www.muslimthaipost.com/prayertimes/solaat.php?" <br/>
 NTP Server = "th.pool.ntp.org"
 
