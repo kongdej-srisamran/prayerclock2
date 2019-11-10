@@ -1,11 +1,15 @@
-# prayerclock version 2
-Using PlatformIO with VSCode
+# Muslim Prayer Clock
+
+Time Server :
+MuslimThaipost  = "http://www.muslimthaipost.com/prayertimes/solaat.php?"
+NTP Server = "th.pool.ntp.org"
 
 Hardware Requirements :
 1. NodeMCU
 2. YX5300 Serial MP3 Player
+3. LED Matrix MAX7219
 
-Arduino Library : pio lib install <LIB>
+PlatformIO with VSCode using Libraries : pio lib install <LIB>
 1. Time
 2. ArduinoJson
 3. WiFiManager
