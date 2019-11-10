@@ -1,8 +1,8 @@
 # Muslim Prayer Clock
 
-Time Server :
+Time Services :
 
-MuslimThaipost  = "http://www.muslimthaipost.com/prayertimes/index.php" <br/>
+MuslimThaipost  = "http://www.muslimthaipost.com/prayertimes/index.php?STS" <br/>
 NTP Server = "th.pool.ntp.org" <br>
 
 Hardware Requirements :
