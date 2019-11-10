@@ -208,9 +208,8 @@ void getLamad() {
 //=== Setup&Loop ----------------------------------------
 void setup() {
 	Serial.begin(9600);
-	pinMode(CONFIGRESETBUTTON, INPUT_PULLUP);
 	Serial.println("boot");
-  mx.begin(); // init led matrix
+	pinMode(CONFIGRESETBUTTON, INPUT_PULLUP);
 	
   setupWiFi(); // setup wifif
   Serial.println("Wifi connected.");
@@ -219,12 +218,15 @@ void setup() {
   setSyncInterval(SECS_PER_HOUR);
   setSyncProvider(getNTPtime);
 
-  getLamad();  // get lamad time 
+  getLamad();  // get lamad time   
   
   mp3.begin();
   mp3.setSynchronous(true);
   mp3.volume(mp3.volumeMax());
+  
+  mx.begin(); // init led matrix
 }
+
 void loop() {
   mp3.check(); 
   uint8_t	timeslice=now() % 60;  
@@ -233,6 +235,7 @@ void loop() {
     NTPclient.begin(ntpserver, CET);
     setSyncInterval(SECS_PER_HOUR);
     setSyncProvider(getNTPtime);
+    ESP.reset();
   }
  
 	if ( (timeslice > 4 && timeslice < 9) ||  (timeslice > 24 && timeslice < 28) ) {
@@ -252,10 +255,9 @@ void loop() {
     prevPlaying = now;
     mp3.playTrack(2);
   }
-  else if (now == getMinute("01:00") && prevPlaying < now) {
+  else if (now == getMinute("01:00")) {
     Serial.println("get prayer time");
     getLamad();
-    prevPlaying = now;
   }
 
 	if (digitalRead(CONFIGRESETBUTTON)==LOW) { // & false to skip resetWiFi
